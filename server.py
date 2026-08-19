@@ -248,15 +248,42 @@ if __name__ == "__main__":
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
     if transport in ("streamable-http", "sse"):
         import uvicorn
-        from starlette.responses import PlainTextResponse
-        from starlette.routing import Route
+        from contextlib import AsyncExitStack
 
         port = int(os.environ.get("PORT", "8000"))
         mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
 
-        app = mcp.streamable_http_app() if transport == "streamable-http" else mcp.sse_app()
-        app.router.routes.insert(0, Route("/health", lambda r: PlainTextResponse("ok")))
+        mcp.streamable_http_app()  # lazily initializes mcp.session_manager
+
+        # Raw ASGI app, hand-dispatched by exact path, so both "/mcp" and
+        # "/mcp/" work with NO redirect — some cloud health-checkers POST the
+        # bare mcpUrl and don't follow a 307 to the trailing-slash route that
+        # FastMCP's built-in Starlette app would otherwise require.
+        async def app(scope, receive, send):
+            if scope["type"] == "lifespan":
+                async with AsyncExitStack() as stack:
+                    await stack.enter_async_context(mcp.session_manager.run())
+                    while True:
+                        message = await receive()
+                        if message["type"] == "lifespan.startup":
+                            await send({"type": "lifespan.startup.complete"})
+                        elif message["type"] == "lifespan.shutdown":
+                            await send({"type": "lifespan.shutdown.complete"})
+                            return
+                return
+            path = scope["path"]
+            if path == "/health":
+                await send({"type": "http.response.start", "status": 200,
+                             "headers": [(b"content-type", b"text/plain")]})
+                await send({"type": "http.response.body", "body": b"ok"})
+                return
+            if path in ("/mcp", "/mcp/"):
+                await mcp.session_manager.handle_request(scope, receive, send)
+                return
+            await send({"type": "http.response.start", "status": 404,
+                         "headers": [(b"content-type", b"text/plain")]})
+            await send({"type": "http.response.body", "body": b"Not Found"})
 
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
