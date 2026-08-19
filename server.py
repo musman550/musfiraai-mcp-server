@@ -247,9 +247,17 @@ def draft_client_reply(client_need: str) -> str:
 if __name__ == "__main__":
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
     if transport in ("streamable-http", "sse"):
+        import uvicorn
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+
         port = int(os.environ.get("PORT", "8000"))
         mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
-        mcp.run(transport=transport)
+
+        app = mcp.streamable_http_app() if transport == "streamable-http" else mcp.sse_app()
+        app.router.routes.insert(0, Route("/health", lambda r: PlainTextResponse("ok")))
+
+        uvicorn.run(app, host="0.0.0.0", port=port)
     else:
         mcp.run()
