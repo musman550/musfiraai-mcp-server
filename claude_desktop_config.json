@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "musfiraai": {
+      "command": "python",
+      "args": ["/absolute/path/to/musfiraai-mcp/server.py"]
+    }
+  }
+}
