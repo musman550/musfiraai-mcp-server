@@ -69,8 +69,6 @@ REVIEWS = [
 
 BRANDS = [
     {"name": "Automate With Musfira AI", "description": "Faceless YouTube Shorts live-streaming automation channel."},
-    {"name": "Gyan Yantra AI News", "description": "AI News Shorts automation bot and channel."},
-    {"name": "VESTRO AI", "description": "LinkedIn automation bot brand.", "url": "https://vestroai.xyz"},
     {"name": "Amazon Seller Automation", "description": "SP-API based repricing and reporting system."},
 ]
 
