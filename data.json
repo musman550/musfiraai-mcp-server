@@ -165,5 +165,97 @@
       "name": "Blog",
       "url": "https://musfiraai.com/#blog"
     }
-  ]
+  ],
+  "portfolio": {
+    "headline": "Growing search visibility, then automating what comes after it.",
+    "summary": "A freelance SEO, GEO & AEO specialist and web consultant with 2+ years shaping search strategy, paid media, and AI-assisted content — now engineering Python-powered AI automation and agentic workflow systems on that same foundation.",
+    "stats": {
+      "experience": "2+ years freelance SEO/GEO/AEO",
+      "languages": "3 (Urdu, Punjabi, English)",
+      "systems_built": "7 automation systems"
+    },
+    "about": "Versatile and adaptable, with a background spanning Search Engine Optimization and website management, alongside hands-on team supervision and direct customer service. Proficient in technical and content-focused SEO strategies — including GEO (Generative Engine Optimization) and AEO (Answer Engine Optimization) for AI search — Google Search Console, and automated content generation. Native in Urdu and Punjabi, fluent in English.",
+    "skill_categories": [
+      {
+        "category": "SEO, GEO & AEO",
+        "skills": [
+          "On-Page SEO",
+          "Off-Page SEO & link building",
+          "Keyword research",
+          "Technical SEO audits",
+          "GEO & AEO for AI search visibility",
+          "Google Search Console",
+          "WordPress",
+          "Blogger (Blogspot)",
+          "Custom & free domain setup",
+          "Paid Search (SEM)",
+          "AI content generation"
+        ]
+      },
+      {
+        "category": "Operations",
+        "skills": [
+          "Content management",
+          "Team leadership",
+          "Customer support",
+          "Process discipline under deadline"
+        ]
+      },
+      {
+        "category": "Video & Voice Automation",
+        "skills": [
+          "FFmpeg render & compile automation",
+          "Multi-provider TTS with fallback",
+          "Structured, continuity-tracked scripting"
+        ]
+      },
+      {
+        "category": "AI Orchestration",
+        "skills": [
+          "Musfira AI, Gemini, Claude, GPT, Groq fallback chains",
+          "Local-first execution via Ollama",
+          "SHA-256 / MD5 dedup logic"
+        ]
+      },
+      {
+        "category": "Dashboards & Backends",
+        "skills": [
+          "CustomTkinter control panels",
+          "FastAPI + JWT + WebSocket backends",
+          "Live monitoring & scheduler views"
+        ]
+      },
+      {
+        "category": "Amazon Automation",
+        "skills": [
+          "SP-API repricing & inventory sync",
+          "Listing management & keyword research",
+          "Scheduler-driven reporting"
+        ]
+      },
+      {
+        "category": "Web & SEO Engines",
+        "skills": [
+          "Custom Blogger XML theme builds",
+          "Programmatic SEO & redirects",
+          "AEO/GEO-aware content structuring"
+        ]
+      },
+      {
+        "category": "LinkedIn Automation",
+        "skills": [
+          "OAuth 2.0 posting automation",
+          "Duplicate detection & scheduling",
+          "Branded, SEO-scored content"
+        ]
+      }
+    ]
+  },
+  "availability": {
+    "note": "Free build slots are limited per month. Update this block manually as slots fill or the month resets.",
+    "monthly_slot_limit": 10,
+    "slots_used_this_month": 0,
+    "month": "August 2026",
+    "last_updated": "2026-08-20"
+  }
 }

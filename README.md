@@ -22,11 +22,13 @@ MCP_TRANSPORT=streamable-http PORT=8000 python server.py    # HTTP (remote/cloud
 
 ## Tools
 get_company_info, get_social_links, get_contact_methods, get_rating,
-list_services, get_service, list_ai_stack, get_faq, get_reviews, list_brands,
-get_site_map, search_site, get_full_profile.
+list_services, get_service, list_ai_stack, get_faq, get_faq_audio, get_reviews,
+list_brands, get_site_map, search_site, get_full_profile, get_portfolio,
+check_slot_availability, request_callback, get_usage_stats.
 
 ## Resources
-musfiraai://company, musfiraai://services, musfiraai://faq, musfiraai://reviews
+musfiraai://company, musfiraai://services, musfiraai://faq, musfiraai://reviews,
+musfiraai://portfolio
 
 ## Prompts
 draft_client_reply

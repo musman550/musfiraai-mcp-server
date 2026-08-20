@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("musfiraai")
@@ -7,7 +8,7 @@ mcp = FastMCP("musfiraai")
 # ---------------------------------------------------------------------------
 # Data — loaded from data.json (edit that file directly, e.g. on GitHub, and
 # push to main; Manufact auto-redeploys). No code changes needed to update
-# company info, services, FAQ, reviews, brands, or the site map.
+# company info, services, FAQ, reviews, brands, portfolio, or availability.
 # ---------------------------------------------------------------------------
 
 _DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
@@ -23,6 +24,28 @@ FAQ = _DATA["faq"]
 REVIEWS = _DATA["reviews"]
 BRANDS = _DATA["brands"]
 BREADCRUMBS = _DATA["breadcrumbs"]
+PORTFOLIO = _DATA["portfolio"]
+AVAILABILITY = _DATA["availability"]
+
+# ---------------------------------------------------------------------------
+# Lightweight in-memory usage tracking (resets on restart — see
+# get_usage_stats for details). Every @tracked tool call increments a
+# per-tool counter and updates the "since" timestamp.
+# ---------------------------------------------------------------------------
+
+import functools
+import time
+
+_USAGE = {"since": time.time(), "calls": {}}
+
+
+def tracked(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        _USAGE["calls"][fn.__name__] = _USAGE["calls"].get(fn.__name__, 0) + 1
+        return fn(*args, **kwargs)
+    return wrapper
+
 
 # ---------------------------------------------------------------------------
 # Tools
@@ -30,18 +53,21 @@ BREADCRUMBS = _DATA["breadcrumbs"]
 
 
 @mcp.tool()
+@tracked
 def get_company_info() -> dict:
     """Get Musfiraai company/brand info: founder, description, contact, region, url."""
     return COMPANY
 
 
 @mcp.tool()
+@tracked
 def get_social_links() -> dict:
     """Get Musfiraai's social media links (Instagram, YouTube, LinkedIn, Telegram, Discord)."""
     return SOCIALS
 
 
 @mcp.tool()
+@tracked
 def get_contact_methods() -> dict:
     """Get every way to contact Musfiraai: WhatsApp, email, and socials."""
     return {
@@ -53,18 +79,21 @@ def get_contact_methods() -> dict:
 
 
 @mcp.tool()
+@tracked
 def get_rating() -> dict:
     """Get Musfiraai's aggregate customer rating (value, review count, best possible)."""
     return RATING
 
 
 @mcp.tool()
+@tracked
 def list_services() -> list:
     """List all automation services/modules Musfiraai offers."""
     return SERVICES
 
 
 @mcp.tool()
+@tracked
 def get_service(name: str) -> dict:
     """Get one service by name (case-insensitive partial match). Returns an
     error dict if nothing matches."""
@@ -76,6 +105,7 @@ def get_service(name: str) -> dict:
 
 
 @mcp.tool()
+@tracked
 def list_ai_stack() -> dict:
     """List the AI models/tools in Musfiraai's production stack and what's
     available on request."""
@@ -83,6 +113,7 @@ def list_ai_stack() -> dict:
 
 
 @mcp.tool()
+@tracked
 def get_faq(question: str = "") -> list:
     """Get FAQ entries. If `question` is given, returns entries whose question
     or answer contains that text (case-insensitive substring match); otherwise
@@ -94,24 +125,28 @@ def get_faq(question: str = "") -> list:
 
 
 @mcp.tool()
+@tracked
 def get_reviews(min_rating: int = 0) -> list:
     """Get verified customer reviews, optionally filtered by minimum rating (1-5)."""
     return [r for r in REVIEWS if r["rating"] >= min_rating]
 
 
 @mcp.tool()
+@tracked
 def list_brands() -> list:
     """List the automation brands/channels operated under Musfiraai."""
     return BRANDS
 
 
 @mcp.tool()
+@tracked
 def get_site_map() -> list:
     """Get the site's top-level navigation sections (breadcrumbs)."""
     return BREADCRUMBS
 
 
 @mcp.tool()
+@tracked
 def search_site(query: str) -> dict:
     """Search across services, FAQ, reviews, and brands for a keyword and
     return matches grouped by section."""
@@ -125,6 +160,7 @@ def search_site(query: str) -> dict:
 
 
 @mcp.tool()
+@tracked
 def get_full_profile() -> dict:
     """Get the complete Musfiraai profile in one call: company, socials, rating,
     services, AI stack, brands, and FAQ. Useful for a single-shot overview."""
@@ -141,6 +177,35 @@ def get_full_profile() -> dict:
 
 
 @mcp.tool()
+@tracked
+def get_portfolio() -> dict:
+    """Get Muhammad Usman's freelance portfolio: SEO/GEO/AEO background,
+    experience stats, and the skill categories behind Musfiraai's automation
+    work (video/voice, AI orchestration, dashboards, Amazon, web/SEO, LinkedIn)."""
+    return PORTFOLIO
+
+
+@mcp.tool()
+@tracked
+def check_slot_availability() -> dict:
+    """Check how many free monthly automation-build slots are left. This
+    number is set manually in data.json (there's no live booking system
+    behind it) so it reflects whatever Musfiraai last updated."""
+    limit = AVAILABILITY.get("monthly_slot_limit", 0)
+    used = AVAILABILITY.get("slots_used_this_month", 0)
+    remaining = max(limit - used, 0)
+    return {
+        "month": AVAILABILITY.get("month"),
+        "monthly_slot_limit": limit,
+        "slots_used_this_month": used,
+        "slots_remaining": remaining,
+        "last_updated": AVAILABILITY.get("last_updated"),
+        "note": "Manually maintained — contact Musfiraai to confirm real-time availability." if remaining <= 0 else None,
+    }
+
+
+@mcp.tool()
+@tracked
 def request_callback(name: str, need: str, contact: str) -> dict:
     """Submit a lead: someone wants Musfiraai to build them a free automation
     system. Emails the request straight to Musfiraai so a human follows up.
@@ -184,6 +249,68 @@ def request_callback(name: str, need: str, contact: str) -> dict:
         }
 
 
+# Voices: pick by language. Matches Usman's existing edge-tts stack.
+_VOICES = {
+    "en": "en-US-AriaNeural",
+    "hi": "hi-IN-MadhurNeural",
+    "ur": "ur-PK-AsadNeural",
+}
+_AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "audio")
+
+
+@mcp.tool()
+@tracked
+def get_faq_audio(question: str, language: str = "en") -> dict:
+    """Answer a FAQ question as spoken audio (text-to-speech via edge-tts).
+    `language` is one of "en" (English), "hi" (Hindi), or "ur" (Urdu) and
+    picks the voice; the FAQ text itself is only stored in English. Returns
+    a URL to an MP3 the caller can play or link to. Audio files are
+    generated on demand and are not guaranteed to persist across restarts."""
+    matches = get_faq.__wrapped__(question)
+    if not matches:
+        return {"error": f"No FAQ entry matches '{question}'.", "available_questions": [f["question"] for f in FAQ]}
+
+    answer = matches[0]["answer"]
+    voice = _VOICES.get(language, _VOICES["en"])
+
+    try:
+        import asyncio
+        import edge_tts
+
+        os.makedirs(_AUDIO_DIR, exist_ok=True)
+        filename = f"{uuid.uuid4().hex}.mp3"
+        filepath = os.path.join(_AUDIO_DIR, filename)
+
+        async def synth():
+            communicate = edge_tts.Communicate(answer, voice)
+            await communicate.save(filepath)
+
+        asyncio.run(synth())
+
+        base_url = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+        audio_url = f"{base_url}/audio/{filename}" if base_url else f"/audio/{filename}"
+        return {"question": matches[0]["question"], "answer_text": answer, "audio_url": audio_url, "voice": voice}
+    except Exception as e:
+        return {"question": matches[0]["question"], "answer_text": answer, "audio_url": None, "error": f"TTS generation failed: {e}"}
+
+
+@mcp.tool()
+@tracked
+def get_usage_stats() -> dict:
+    """See which tools have been called most on this running server instance.
+    Counts are in-memory only — they reset whenever the server restarts or
+    redeploys, so this reflects recent activity, not all-time history."""
+    calls = _USAGE["calls"]
+    total = sum(calls.values())
+    top = sorted(calls.items(), key=lambda kv: kv[1], reverse=True)
+    return {
+        "tracking_since": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(_USAGE["since"])),
+        "total_calls": total,
+        "calls_by_tool": dict(top),
+        "note": "In-memory only — resets on restart/redeploy, not a historical log.",
+    }
+
+
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
@@ -211,6 +338,12 @@ def resource_faq() -> list:
 def resource_reviews() -> list:
     """Musfiraai customer reviews."""
     return REVIEWS
+
+
+@mcp.resource("musfiraai://portfolio")
+def resource_portfolio() -> dict:
+    """Muhammad Usman's freelance SEO/GEO/AEO + automation portfolio."""
+    return PORTFOLIO
 
 
 # ---------------------------------------------------------------------------
@@ -277,6 +410,25 @@ if __name__ == "__main__":
                 return
             if path in ("/mcp", "/mcp/"):
                 await mcp.session_manager.handle_request(scope, receive, send)
+                return
+            if path.startswith("/audio/"):
+                fname = path[len("/audio/"):]
+                if "/" in fname or ".." in fname:
+                    await send({"type": "http.response.start", "status": 400,
+                                 "headers": [(b"content-type", b"text/plain")]})
+                    await send({"type": "http.response.body", "body": b"Bad Request"})
+                    return
+                fpath = os.path.join(_AUDIO_DIR, fname)
+                if os.path.isfile(fpath):
+                    with open(fpath, "rb") as af:
+                        body = af.read()
+                    await send({"type": "http.response.start", "status": 200,
+                                 "headers": [(b"content-type", b"audio/mpeg")]})
+                    await send({"type": "http.response.body", "body": body})
+                else:
+                    await send({"type": "http.response.start", "status": 404,
+                                 "headers": [(b"content-type", b"text/plain")]})
+                    await send({"type": "http.response.body", "body": b"Not Found"})
                 return
             await send({"type": "http.response.start", "status": 404,
                          "headers": [(b"content-type", b"text/plain")]})

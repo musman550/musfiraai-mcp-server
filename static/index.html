@@ -243,8 +243,8 @@
     </div>
 
     <div class="stats">
-      <div class="stat"><b>14</b><span>Tools</span></div>
-      <div class="stat"><b>4</b><span>Resources</span></div>
+      <div class="stat"><b>18</b><span>Tools</span></div>
+      <div class="stat"><b>5</b><span>Resources</span></div>
       <div class="stat"><b>1</b><span>Prompt</span></div>
     </div>
 
@@ -382,12 +382,16 @@ const TOOLS = [
   ["get_service", "One service by name, partial match.", "name: string"],
   ["list_ai_stack", "Core production AI stack + models available on request.", ""],
   ["get_faq", "FAQ entries, optionally filtered by keyword.", "question?: string"],
+  ["get_faq_audio", "FAQ answer as spoken audio (edge-tts) — returns an MP3 URL.", "question: string, language?: en|hi|ur"],
   ["get_reviews", "Verified customer reviews, optionally filtered by rating.", "min_rating?: int"],
   ["list_brands", "Brands/channels operated under Musfiraai.", ""],
   ["get_site_map", "Top-level navigation sections of the site.", ""],
   ["search_site", "Keyword search across services, FAQ, reviews, brands.", "query: string"],
   ["get_full_profile", "Everything above in a single call.", ""],
+  ["get_portfolio", "Muhammad Usman's freelance SEO/GEO/AEO + automation portfolio.", ""],
+  ["check_slot_availability", "How many free monthly build slots are left (manually maintained).", ""],
   ["request_callback", "Submits a lead — emails Musfiraai so a human follows up.", "name, need, contact: string"],
+  ["get_usage_stats", "Which tools have been called most on this running instance.", ""],
 ];
 document.getElementById('tools-grid').innerHTML = TOOLS.map(([name,desc,params])=>`
   <div class="card">
@@ -403,6 +407,7 @@ const RES = [
   ["Resource", "musfiraai://services", "Service catalog as a readable URI."],
   ["Resource", "musfiraai://faq", "FAQ list as a readable URI."],
   ["Resource", "musfiraai://reviews", "Reviews as a readable URI."],
+  ["Resource", "musfiraai://portfolio", "Freelance portfolio as a readable URI."],
   ["Prompt", "draft_client_reply(client_need)", "Drafts a WhatsApp/email reply to a prospective client."],
 ];
 document.getElementById('res-grid').innerHTML = RES.map(([kind,name,desc])=>`
