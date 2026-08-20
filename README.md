@@ -1,16 +1,24 @@
 # Musfiraai MCP Server
 
-MCP server exposing Musfiraai's company info, services, AI stack, FAQ, reviews,
-brands, and contact details as tools/resources/prompts for any MCP-compatible
-AI client.
+Live Model Context Protocol server exposing Musfiraai's company info, services,
+AI stack, FAQ, reviews, and contact details as tools/resources/prompts for any
+MCP-compatible AI client (Claude, GPT, etc).
+
+**Live docs + connect page:** https://dark-spark-uxxux.run.mcp-use.com/
+**MCP endpoint:** https://dark-spark-uxxux.run.mcp-use.com/mcp
 
 ## Run locally
 
 ```
 pip install -r requirements.txt
-python server.py                 # stdio (Claude Desktop)
-MCP_TRANSPORT=streamable-http PORT=8000 python server.py   # HTTP (remote)
+python server.py                                           # stdio (Claude Desktop, local)
+MCP_TRANSPORT=streamable-http PORT=8000 python server.py    # HTTP (remote/cloud)
 ```
+
+## Routes (HTTP mode)
+- `GET /` — human-readable docs/landing page (responsive, SEO + FAQ schema)
+- `GET /health` — health check
+- `POST /mcp` (or `/mcp/`) — the MCP JSON-RPC endpoint
 
 ## Tools
 get_company_info, get_social_links, get_contact_methods, get_rating,

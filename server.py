@@ -254,10 +254,15 @@ if __name__ == "__main__":
 
         mcp.streamable_http_app()  # lazily initializes mcp.session_manager
 
+        _static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+        with open(os.path.join(_static_dir, "index.html"), "rb") as f:
+            DOCS_HTML = f.read()
+
         # Raw ASGI app, hand-dispatched by exact path, so both "/mcp" and
         # "/mcp/" work with NO redirect — some cloud health-checkers POST the
         # bare mcpUrl and don't follow a 307 to the trailing-slash route that
         # FastMCP's built-in Starlette app would otherwise require.
+        # "/" serves a human-readable docs/landing page; "/mcp" is the API.
         async def app(scope, receive, send):
             if scope["type"] == "lifespan":
                 async with AsyncExitStack() as stack:
@@ -275,6 +280,11 @@ if __name__ == "__main__":
                 await send({"type": "http.response.start", "status": 200,
                              "headers": [(b"content-type", b"text/plain")]})
                 await send({"type": "http.response.body", "body": b"ok"})
+                return
+            if path == "/":
+                await send({"type": "http.response.start", "status": 200,
+                             "headers": [(b"content-type", b"text/html; charset=utf-8")]})
+                await send({"type": "http.response.body", "body": DOCS_HTML})
                 return
             if path in ("/mcp", "/mcp/"):
                 await mcp.session_manager.handle_request(scope, receive, send)

@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Musfiraai MCP Server — Company Data API for AI Agents</title>
+<meta name="description" content="Live Model Context Protocol (MCP) server exposing Musfiraai's services, FAQ, reviews, and contact details as tools, resources, and prompts for Claude, GPT, and any MCP-compatible AI agent.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://dark-spark-uxxux.run.mcp-use.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Musfiraai MCP Server">
+<meta property="og:description" content="Connect any MCP-compatible AI agent to Musfiraai's live company data — services, FAQ, reviews, contact — via Streamable HTTP.">
+<meta property="og:url" content="https://dark-spark-uxxux.run.mcp-use.com/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Musfiraai MCP Server">
+<meta name="twitter:description" content="Live MCP server for Musfiraai — 13 tools, 4 resources, 1 prompt. Connect in under a minute.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%230A0D10%22/><circle cx=%2210%22 cy=%2216%22 r=%223.2%22 fill=%22%2300E6B8%22/><circle cx=%2222%22 cy=%2216%22 r=%223.2%22 fill=%22%23FFB020%22/><line x1=%2213.2%22 y1=%2216%22 x2=%2218.8%22 y2=%2216%22 stroke=%22%233A4550%22 stroke-width=%222%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "Musfiraai",
+      "url": "https://musfiraai.com/",
+      "founder": {"@type": "Person", "name": "Muhammad Usman"},
+      "email": "musfiraai329@gmail.com",
+      "sameAs": [
+        "https://instagram.com/musma_n55",
+        "https://youtube.com/@automatewithmusfiraai",
+        "https://www.linkedin.com/in/muhammad-usman-b3218b39b",
+        "https://t.me/musfiraai",
+        "https://discord.gg/snaBYJzM"
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Musfiraai MCP Server",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Any (Model Context Protocol / Streamable HTTP)",
+      "url": "https://dark-spark-uxxux.run.mcp-use.com/",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "description": "MCP server exposing Musfiraai's company info, services, FAQ, reviews and contact details as tools, resources, and prompts for AI agents."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "What is Musfiraai?", "acceptedAnswer": {"@type": "Answer", "text": "Musfiraai is a free AI automation platform that builds and delivers AI agents, chatbots, call agents, and n8n workflows at zero cost — operated by Muhammad Usman as an alternative to paid automation agencies on Fiverr and Upwork."}},
+        {"@type": "Question", "name": "Is this actually free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — ready systems and on-demand custom builds are 100% free with lifetime access. No invoice, no retainer, no hidden tier."}},
+        {"@type": "Question", "name": "What is a Musfiraai MCP server?", "acceptedAnswer": {"@type": "Answer", "text": "It's a Model Context Protocol server that exposes Musfiraai's company data — services, FAQ, reviews, contact info — as structured tools an AI agent like Claude can call directly, instead of scraping the website."}},
+        {"@type": "Question", "name": "How do I connect to the Musfiraai MCP server?", "acceptedAnswer": {"@type": "Answer", "text": "Add https://dark-spark-uxxux.run.mcp-use.com/mcp as a custom connector in Claude Desktop, or point MCP Inspector's Streamable HTTP transport at the same URL."}}
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  :root{
+    --bg:#0A0D10;
+    --bg-panel:#12161B;
+    --bg-panel-2:#161B21;
+    --border:#212830;
+    --text:#ECF1F5;
+    --text-dim:#8A96A3;
+    --text-faint:#586270;
+    --accent:#00E6B8;
+    --accent-dim:#0A3D34;
+    --accent-2:#FFB020;
+    --radius:10px;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--body);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important;}
+  }
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  section{padding:72px 0}
+  @media (max-width:640px){ section{padding:48px 0} }
+
+  h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:-0.01em;margin:0 0 .5em}
+  h2{font-size:clamp(22px,3.4vw,30px)}
+  h3{font-size:17px}
+  p{color:var(--text-dim);margin:0 0 1em}
+  .eyebrow{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:block}
+
+  /* header */
+  header{position:sticky;top:0;z-index:20;background:rgba(10,13,16,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:15px;text-decoration:none}
+  .brand-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#00B894);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#03211B;flex-shrink:0}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-dim);border:1px solid #12574A;padding:5px 10px;border-radius:99px}
+  .dot{width:6px;height:6px;border-radius:99px;background:var(--accent);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,184,.5)}50%{opacity:.6;box-shadow:0 0 0 5px rgba(0,230,184,0)}}
+  .nav-links{display:flex;gap:22px;font-size:14px;color:var(--text-dim)}
+  .nav-links a{text-decoration:none;transition:color .15s}
+  .nav-links a:hover{color:var(--text)}
+  @media (max-width:640px){ .nav-links{display:none} }
+
+  /* hero */
+  .hero{padding:88px 0 40px}
+  .hero h1{font-size:clamp(30px,5.4vw,50px);line-height:1.08;max-width:14ch}
+  .hero .lede{font-size:17px;max-width:52ch;color:var(--text-dim)}
+  .endpoint-row{display:flex;gap:10px;flex-wrap:wrap;margin:28px 0 18px}
+  .endpoint-box{
+    display:flex;align-items:center;gap:10px;background:var(--bg-panel);
+    border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;
+    font-family:var(--mono);font-size:13.5px;flex:1;min-width:280px;overflow:hidden
+  }
+  .endpoint-box code{color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .copy-btn{
+    font-family:var(--body);font-size:13px;font-weight:600;color:var(--bg);
+    background:var(--accent);border:none;border-radius:7px;padding:9px 14px;cursor:pointer;
+    white-space:nowrap;transition:transform .12s, background .15s;flex-shrink:0
+  }
+  .copy-btn:hover{background:#33ecc8}
+  .copy-btn:active{transform:scale(.96)}
+  .copy-btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .copy-btn.ghost:hover{border-color:var(--accent);color:var(--accent);background:transparent}
+  .cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+
+  /* connection visualizer — signature element */
+  .flow{
+    margin-top:56px;background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;
+    padding:32px 20px;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden
+  }
+  .flow-node{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;width:120px;text-align:center}
+  .flow-node .icon{width:44px;height:44px;border-radius:10px;background:var(--bg-panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .flow-node.you .icon{border-color:var(--accent-2);color:var(--accent-2)}
+  .flow-node.server .icon{border-color:var(--accent);color:var(--accent)}
+  .flow-node span{font-family:var(--mono);font-size:11.5px;color:var(--text-dim)}
+  .flow-track{flex:1;position:relative;height:2px;background:var(--border);margin:0 6px;min-width:60px}
+  .flow-track::before{
+    content:'';position:absolute;top:-3px;left:0;width:8px;height:8px;border-radius:99px;background:var(--accent);
+    animation:travel 2.6s linear infinite
+  }
+  @keyframes travel{0%{left:-4px;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:calc(100% - 4px);opacity:0}}
+  .flow-label{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10.5px;color:var(--text-faint);white-space:nowrap}
+  @media (max-width:640px){
+    .flow{flex-direction:column}
+    .flow-track{width:2px;height:36px;margin:4px 0}
+    .flow-track::before{animation:travelv 2.6s linear infinite;top:0;left:-3px}
+    @keyframes travelv{0%{top:-4px;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:calc(100% - 4px);opacity:0}}
+    .flow-label{top:50%;left:-6px;transform:translateY(-50%) rotate(0);left:22px}
+  }
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:20px}
+  .stat{background:var(--bg-panel);padding:20px;text-align:center}
+  .stat b{display:block;font-family:var(--display);font-size:28px;color:var(--accent)}
+  .stat span{font-size:12.5px;color:var(--text-dim)}
+  @media (max-width:640px){ .stats{grid-template-columns:1fr} }
+
+  /* tabs */
+  .tabs{display:flex;gap:2px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:4px;border-bottom:none}
+  .tab-btn{flex:1;background:none;border:none;color:var(--text-dim);font-family:var(--body);font-size:13.5px;font-weight:500;padding:10px;border-radius:7px;cursor:pointer;transition:.15s}
+  .tab-btn.active{background:var(--bg-panel-2);color:var(--text)}
+  .tab-panel{display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:0 0 12px 12px;padding:18px}
+  .tab-panel.active{display:block}
+  .tab-panel p{font-size:13.5px}
+  .tab-panel ol{color:var(--text-dim);font-size:13.5px;padding-left:20px;margin:0 0 14px}
+  .tab-panel li{margin-bottom:6px}
+  pre{
+    background:var(--bg-panel-2);border:1px solid var(--border);border-radius:8px;
+    padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;color:#C9D3DB;
+    margin:0;position:relative
+  }
+  .code-wrap{position:relative}
+  .code-wrap .copy-btn{position:absolute;top:8px;right:8px;padding:5px 10px;font-size:11.5px}
+
+  /* capability grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:20px}
+  .card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+  .card .kind{font-family:var(--mono);font-size:10.5px;color:var(--accent-2);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+  .card h3{margin-bottom:6px;font-family:var(--mono);font-weight:500;font-size:14.5px;color:var(--text)}
+  .card p{font-size:13px;margin:0}
+  .card .params{margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint)}
+
+  /* faq */
+  .faq-item{border-bottom:1px solid var(--border)}
+  .faq-q{
+    width:100%;text-align:left;background:none;border:none;color:var(--text);
+    font-family:var(--body);font-weight:600;font-size:14.5px;padding:16px 0;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:12px
+  }
+  .faq-q .plus{font-family:var(--mono);color:var(--accent);transition:transform .2s;flex-shrink:0}
+  .faq-item.open .plus{transform:rotate(45deg)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .25s ease}
+  .faq-a p{padding-bottom:16px;font-size:13.5px}
+
+  footer{border-top:1px solid var(--border);padding:36px 0;margin-top:20px}
+  .foot-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--text-faint)}
+  .foot-row a{text-decoration:none;color:var(--text-dim)}
+  .foot-row a:hover{color:var(--accent)}
+  .foot-links{display:flex;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark">M</span> Musfiraai MCP
+    </a>
+    <div class="nav-links">
+      <a href="#connect">Connect</a>
+      <a href="#tools">Tools</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/musman550/musfiraai-mcp-server" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+    <span class="status-pill"><span class="dot"></span> Live</span>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero wrap">
+    <span class="eyebrow">Model Context Protocol · Streamable HTTP</span>
+    <h1>One MCP server. Every Musfiraai fact your AI needs.</h1>
+    <p class="lede">Musfiraai's services, FAQ, reviews and contact details, exposed as structured tools any MCP-compatible AI agent — Claude, GPT, or your own — can call directly. No scraping, no stale answers.</p>
+
+    <div class="endpoint-row">
+      <div class="endpoint-box">
+        <code id="endpoint-text">https://dark-spark-uxxux.run.mcp-use.com/mcp</code>
+      </div>
+      <button class="copy-btn" onclick="copyText('endpoint-text', this)">Copy endpoint</button>
+    </div>
+    <div class="cta-row">
+      <button class="copy-btn ghost" onclick="copyText('claude-config', this)">Copy Claude Desktop config</button>
+      <a class="copy-btn ghost" href="https://github.com/musman550/musfiraai-mcp-server" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">View source on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>13</b><span>Tools</span></div>
+      <div class="stat"><b>4</b><span>Resources</span></div>
+      <div class="stat"><b>1</b><span>Prompt</span></div>
+    </div>
+
+    <div class="flow" role="img" aria-label="Diagram: an AI client sends a JSON-RPC request over Streamable HTTP to the Musfiraai MCP server, which responds with structured data.">
+      <div class="flow-node you">
+        <div class="icon">🤖</div>
+        <span>AI CLIENT</span>
+      </div>
+      <div class="flow-track"><span class="flow-label">JSON-RPC / HTTP</span></div>
+      <div class="flow-node server">
+        <div class="icon">◆</div>
+        <span>MUSFIRAAI MCP</span>
+      </div>
+      <div class="flow-track"><span class="flow-label">structured JSON</span></div>
+      <div class="flow-node you">
+        <div class="icon">📋</div>
+        <span>RESULT</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="connect" class="wrap">
+    <span class="eyebrow">Setup</span>
+    <h2>Connect in under a minute</h2>
+    <p>Pick your client. Every step is here — copy, paste, done.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="claude">Claude Desktop</button>
+      <button class="tab-btn" data-tab="inspector">MCP Inspector</button>
+      <button class="tab-btn" data-tab="curl">curl / raw</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-claude">
+      <ol>
+        <li>Open Claude Desktop → <strong>Settings → Connectors → Add custom connector</strong>.</li>
+        <li>Paste the URL below as the server URL (transport: Streamable HTTP).</li>
+        <li>Save, then ask Claude something like "What services does Musfiraai offer?"</li>
+      </ol>
+      <div class="code-wrap">
+        <pre id="claude-config">{
+  "mcpServers": {
+    "musfiraai": {
+      "url": "https://dark-spark-uxxux.run.mcp-use.com/mcp"
+    }
+  }
+}</pre>
+        <button class="copy-btn" onclick="copyText('claude-config', this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-inspector">
+      <ol>
+        <li>Run the inspector: <code style="font-family:var(--mono);color:var(--accent)">npx @modelcontextprotocol/inspector</code></li>
+        <li>It opens a local page at <code style="font-family:var(--mono)">http://127.0.0.1:6274</code> — that page is running on <em>your</em> machine, not this server.</li>
+        <li>In the inspector, set <strong>Transport Type → Streamable HTTP</strong> and paste the URL below into the <strong>URL</strong> field.</li>
+        <li>Click <strong>Connect</strong>, then open the <strong>Tools</strong> tab to list and call every tool live.</li>
+      </ol>
+      <div class="code-wrap">
+        <pre id="inspector-url">https://dark-spark-uxxux.run.mcp-use.com/mcp</pre>
+        <button class="copy-btn" onclick="copyText('inspector-url', this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-curl">
+      <p>Raw JSON-RPC handshake, for testing outside any client:</p>
+      <div class="code-wrap">
+        <pre id="curl-cmd">curl -X POST https://dark-spark-uxxux.run.mcp-use.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"me","version":"1.0"}}}'</pre>
+        <button class="copy-btn" onclick="copyText('curl-cmd', this)">Copy</button>
+      </div>
+      <p style="margin-top:12px">A 200 response with a <code style="font-family:var(--mono);color:var(--accent)">serverInfo</code> block means the server is healthy.</p>
+    </div>
+  </section>
+
+  <section id="tools" class="wrap">
+    <span class="eyebrow">Reference</span>
+    <h2>Tools</h2>
+    <p>Callable actions. Every tool takes and returns plain JSON.</p>
+    <div class="grid" id="tools-grid"></div>
+  </section>
+
+  <section class="wrap">
+    <span class="eyebrow">Reference</span>
+    <h2>Resources &amp; prompts</h2>
+    <p>Resources are readable data URIs. The prompt is a reusable template.</p>
+    <div class="grid" id="res-grid"></div>
+  </section>
+
+  <section id="faq" class="wrap">
+    <span class="eyebrow">FAQ</span>
+    <h2>Common questions</h2>
+    <div id="faq-list"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>Musfiraai · Muhammad Usman · musfiraai329@gmail.com</span>
+    <div class="foot-links">
+      <a href="https://wa.me/923217358096" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="https://musfiraai.com/" target="_blank" rel="noopener">musfiraai.com</a>
+      <a href="https://github.com/musman550/musfiraai-mcp-server" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+function copyText(id, btn){
+  const el = document.getElementById(id);
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(()=>{ btn.textContent = original; }, 1400);
+  });
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+const TOOLS = [
+  ["get_company_info", "Founder, description, contact, region, and URL for Musfiraai.", ""],
+  ["get_social_links", "Instagram, YouTube, LinkedIn, Telegram, and Discord links.", ""],
+  ["get_contact_methods", "Every way to reach Musfiraai: WhatsApp, email, socials.", ""],
+  ["get_rating", "Aggregate customer rating — value, review count, best possible.", ""],
+  ["list_services", "All automation services/modules Musfiraai offers.", ""],
+  ["get_service", "One service by name, partial match.", "name: string"],
+  ["list_ai_stack", "Core production AI stack + models available on request.", ""],
+  ["get_faq", "FAQ entries, optionally filtered by keyword.", "question?: string"],
+  ["get_reviews", "Verified customer reviews, optionally filtered by rating.", "min_rating?: int"],
+  ["list_brands", "Brands/channels operated under Musfiraai.", ""],
+  ["get_site_map", "Top-level navigation sections of the site.", ""],
+  ["search_site", "Keyword search across services, FAQ, reviews, brands.", "query: string"],
+  ["get_full_profile", "Everything above in a single call.", ""],
+];
+document.getElementById('tools-grid').innerHTML = TOOLS.map(([name,desc,params])=>`
+  <div class="card">
+    <span class="kind">Tool</span>
+    <h3>${name}()</h3>
+    <p>${desc}</p>
+    ${params ? `<div class="params">${params}</div>` : ''}
+  </div>
+`).join('');
+
+const RES = [
+  ["Resource", "musfiraai://company", "Company info as a readable URI."],
+  ["Resource", "musfiraai://services", "Service catalog as a readable URI."],
+  ["Resource", "musfiraai://faq", "FAQ list as a readable URI."],
+  ["Resource", "musfiraai://reviews", "Reviews as a readable URI."],
+  ["Prompt", "draft_client_reply(client_need)", "Drafts a WhatsApp/email reply to a prospective client."],
+];
+document.getElementById('res-grid').innerHTML = RES.map(([kind,name,desc])=>`
+  <div class="card">
+    <span class="kind">${kind}</span>
+    <h3>${name}</h3>
+    <p>${desc}</p>
+  </div>
+`).join('');
+
+const FAQS = [
+  ["What is Musfiraai?", "Musfiraai is a free AI automation platform that builds and delivers AI agents, chatbots, call agents, and n8n workflows at zero cost — operated by Muhammad Usman as an alternative to paid automation agencies on Fiverr and Upwork."],
+  ["Is this actually free?", "Yes — ready systems and on-demand custom builds are 100% free with lifetime access. No invoice, no retainer, no hidden tier."],
+  ["What is a Musfiraai MCP server?", "It's a Model Context Protocol server that exposes Musfiraai's company data as structured tools an AI agent can call directly, instead of scraping the website."],
+  ["Why did MCP Inspector open a localhost page?", "MCP Inspector is a debugging tool that runs on your own computer. It opens http://127.0.0.1:6274 locally so only you can see it — that page is not this server, it's a client used to test this server."],
+  ["Do I need an API key?", "No. This server is public and read-only — no authentication required."],
+];
+document.getElementById('faq-list').innerHTML = FAQS.map(([q,a],i)=>`
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(${i})">
+      ${q} <span class="plus">+</span>
+    </button>
+    <div class="faq-a" id="faq-a-${i}"><p>${a}</p></div>
+  </div>
+`).join('');
+function toggleFaq(i){
+  const item = document.querySelectorAll('.faq-item')[i];
+  const panel = document.getElementById('faq-a-'+i);
+  const isOpen = item.classList.toggle('open');
+  panel.style.maxHeight = isOpen ? panel.scrollHeight + 'px' : '0';
+}
+</script>
+</body>
+</html>
