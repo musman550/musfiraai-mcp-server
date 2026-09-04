@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 mcp = FastMCP("musfiraai")
 
@@ -52,21 +53,21 @@ def tracked(fn):
 # ---------------------------------------------------------------------------
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_company_info() -> dict:
     """Get Musfiraai company/brand info: founder, description, contact, region, url."""
     return COMPANY
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_social_links() -> dict:
     """Get Musfiraai's social media links (Instagram, YouTube, LinkedIn, Telegram, Discord)."""
     return SOCIALS
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_contact_methods() -> dict:
     """Get every way to contact Musfiraai: WhatsApp, email, and socials."""
@@ -78,21 +79,21 @@ def get_contact_methods() -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_rating() -> dict:
     """Get Musfiraai's aggregate customer rating (value, review count, best possible)."""
     return RATING
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def list_services() -> list:
     """List all automation services/modules Musfiraai offers."""
     return SERVICES
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_service(name: str) -> dict:
     """Get one service by name (case-insensitive partial match). Returns an
@@ -104,7 +105,7 @@ def get_service(name: str) -> dict:
     return {"error": f"No service matching '{name}'", "available": [s["name"] for s in SERVICES]}
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def list_ai_stack() -> dict:
     """List the AI models/tools in Musfiraai's production stack and what's
@@ -112,7 +113,7 @@ def list_ai_stack() -> dict:
     return AI_STACK
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_faq(question: str = "") -> list:
     """Get FAQ entries. If `question` is given, returns entries whose question
@@ -124,28 +125,28 @@ def get_faq(question: str = "") -> list:
     return [f for f in FAQ if q in f["question"].lower() or q in f["answer"].lower()]
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_reviews(min_rating: int = 0) -> list:
     """Get verified customer reviews, optionally filtered by minimum rating (1-5)."""
     return [r for r in REVIEWS if r["rating"] >= min_rating]
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def list_brands() -> list:
     """List the automation brands/channels operated under Musfiraai."""
     return BRANDS
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_site_map() -> list:
     """Get the site's top-level navigation sections (breadcrumbs)."""
     return BREADCRUMBS
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def search_site(query: str) -> dict:
     """Search across services, FAQ, reviews, and brands for a keyword and
@@ -159,7 +160,7 @@ def search_site(query: str) -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_full_profile() -> dict:
     """Get the complete Musfiraai profile in one call: company, socials, rating,
@@ -176,7 +177,7 @@ def get_full_profile() -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_portfolio() -> dict:
     """Get Muhammad Usman's freelance portfolio: SEO/GEO/AEO background,
@@ -185,7 +186,7 @@ def get_portfolio() -> dict:
     return PORTFOLIO
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def check_slot_availability() -> dict:
     """Check how many free monthly automation-build slots are left. This
@@ -204,7 +205,7 @@ def check_slot_availability() -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True))
 @tracked
 def request_callback(name: str, need: str, contact: str) -> dict:
     """Submit a lead: someone wants Musfiraai to build them a free automation
@@ -258,7 +259,7 @@ _VOICES = {
 _AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "audio")
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
 @tracked
 def get_faq_audio(question: str, language: str = "en") -> dict:
     """Answer a FAQ question as spoken audio (text-to-speech via edge-tts).
@@ -294,7 +295,7 @@ def get_faq_audio(question: str, language: str = "en") -> dict:
         return {"question": matches[0]["question"], "answer_text": answer, "audio_url": None, "error": f"TTS generation failed: {e}"}
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 @tracked
 def get_usage_stats() -> dict:
     """See which tools have been called most on this running server instance.

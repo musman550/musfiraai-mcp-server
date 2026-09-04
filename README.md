@@ -21,6 +21,11 @@ MCP_TRANSPORT=streamable-http PORT=8000 python server.py    # HTTP (remote/cloud
 - `POST /mcp` (or `/mcp/`) — the MCP JSON-RPC endpoint
 
 ## Tools
+## Tool annotations
+Every tool is annotated per the MCP spec (readOnlyHint / destructiveHint /
+idempotentHint / openWorldHint) so clients know its blast radius before
+calling it. Only `request_callback` is non-read-only (it sends an email).
+
 get_company_info, get_social_links, get_contact_methods, get_rating,
 list_services, get_service, list_ai_stack, get_faq, get_faq_audio, get_reviews,
 list_brands, get_site_map, search_site, get_full_profile, get_portfolio,
