@@ -497,6 +497,12 @@ if __name__ == "__main__":
         port = int(os.environ.get("PORT", "8000"))
         mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
+        # This server is intentionally public over HTTPS (behind Manufact's
+        # reverse proxy) — DNS-rebinding protection exists to protect
+        # localhost-bound dev servers from malicious webpages in a browser,
+        # which doesn't apply here and would otherwise reject every real
+        # request since the public hostname isn't localhost.
+        mcp.settings.transport_security.enable_dns_rebinding_protection = False
 
         mcp.streamable_http_app()  # lazily initializes mcp.session_manager
 
