@@ -7,6 +7,16 @@ from mcp.types import ToolAnnotations
 mcp = FastMCP("musfiraai")
 
 # ---------------------------------------------------------------------------
+# Build-status tracking — stored as JSON in the PRIVATE guardian repo (not
+# this public one), since it holds customer names/contacts. Read/written via
+# the GitHub Contents API. GITHUB_TOKEN must have push access to that repo.
+# ---------------------------------------------------------------------------
+_GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+_STATUS_REPO = os.environ.get("GITHUB_STATUS_REPO", "musman550/musfiraai-mcp-guardian")
+_STATUS_PATH = os.environ.get("GITHUB_STATUS_PATH", "data/builds.json")
+_STATUS_API = f"https://api.github.com/repos/{_STATUS_REPO}/contents/{_STATUS_PATH}"
+
+# ---------------------------------------------------------------------------
 # Data — loaded from data.json (edit that file directly, e.g. on GitHub, and
 # push to main; Manufact auto-redeploys). No code changes needed to update
 # company info, services, FAQ, reviews, brands, portfolio, or availability.
@@ -209,11 +219,14 @@ def check_slot_availability() -> dict:
 @tracked
 def request_callback(name: str, need: str, contact: str) -> dict:
     """Submit a lead: someone wants Musfiraai to build them a free automation
-    system. Emails the request straight to Musfiraai so a human follows up.
+    system. Emails the request straight to Musfiraai so a human follows up,
+    and creates a trackable request ID (see check_build_status).
     `name` = the requester's name, `need` = what they want built, `contact` =
     their email or WhatsApp number to reply to."""
     import smtplib
     from email.message import EmailMessage
+
+    request_id = _create_build_record(name, need, contact)
 
     sender = os.environ.get("GMAIL_ADDRESS")
     app_password = os.environ.get("GMAIL_APP_PASSWORD")
@@ -221,17 +234,19 @@ def request_callback(name: str, need: str, contact: str) -> dict:
     if not sender or not app_password:
         return {
             "sent": False,
+            "request_id": request_id,
             "reason": "Email is not configured on this server yet.",
             "fallback": f"Please contact Musfiraai directly — WhatsApp {COMPANY['whatsapp']} or email {COMPANY['email']}.",
         }
 
     msg = EmailMessage()
-    msg["Subject"] = f"New Musfiraai lead: {name}"
+    msg["Subject"] = f"New Musfiraai lead: {name} [{request_id or 'no-id'}]"
     msg["From"] = sender
     msg["To"] = COMPANY["email"]
     msg["Reply-To"] = contact
     msg.set_content(
         f"New lead from the Musfiraai MCP server.\n\n"
+        f"Request ID: {request_id or '(status tracking unavailable)'}\n"
         f"Name: {name}\n"
         f"Contact: {contact}\n"
         f"Need: {need}\n"
@@ -241,13 +256,121 @@ def request_callback(name: str, need: str, contact: str) -> dict:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender, app_password)
             server.send_message(msg)
-        return {"sent": True, "message": f"Thanks {name} — Musfiraai will follow up at {contact} soon."}
+        reply = {"sent": True, "message": f"Thanks {name} — Musfiraai will follow up at {contact} soon."}
+        if request_id:
+            reply["request_id"] = request_id
+            reply["track_status_with"] = f"check_build_status('{request_id}')"
+        return reply
     except Exception as e:
         return {
             "sent": False,
+            "request_id": request_id,
             "reason": str(e),
             "fallback": f"Please contact Musfiraai directly — WhatsApp {COMPANY['whatsapp']} or email {COMPANY['email']}.",
         }
+
+
+def _github_headers():
+    return {
+        "Authorization": f"token {_GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "musfiraai-mcp-server",
+    }
+
+
+def _create_build_record(name: str, need: str, contact: str):
+    """Append a new request to the private status store. Returns the new
+    request_id, or None if tracking isn't configured / the write failed
+    (request_callback still works without it — email is the source of truth)."""
+    if not _GITHUB_TOKEN:
+        return None
+
+    import base64
+    import datetime
+    import random
+    import urllib.error
+    import urllib.request
+
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(_STATUS_API, headers=_github_headers())
+            with urllib.request.urlopen(req, timeout=10) as r:
+                current = json.loads(r.read().decode())
+            sha = current["sha"]
+            store = json.loads(base64.b64decode(current["content"]).decode())
+        except urllib.error.URLError:
+            return None
+        except Exception:
+            return None
+
+        request_id = f"MFA-{random.randint(1000, 9999)}"
+        existing_ids = {r["id"] for r in store.get("requests", [])}
+        if request_id in existing_ids:
+            continue  # extremely unlikely collision, just retry with a new random id
+
+        store.setdefault("requests", []).append({
+            "id": request_id,
+            "name": name,
+            "contact": contact,
+            "need": need,
+            "status": "Received",
+            "created_utc": datetime.datetime.utcnow().isoformat() + "Z",
+            "updated_utc": datetime.datetime.utcnow().isoformat() + "Z",
+        })
+
+        payload = {
+            "message": f"New build request {request_id}",
+            "content": base64.b64encode(json.dumps(store, indent=2).encode()).decode(),
+            "sha": sha,
+        }
+        try:
+            put_req = urllib.request.Request(
+                _STATUS_API, method="PUT", headers=_github_headers(),
+                data=json.dumps(payload).encode(),
+            )
+            with urllib.request.urlopen(put_req, timeout=10):
+                return request_id
+        except urllib.error.HTTPError as e:
+            if e.code == 409:
+                continue  # someone else wrote in between — retry with fresh sha
+            return None
+        except Exception:
+            return None
+
+    return None
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
+@tracked
+def check_build_status(request_id: str) -> dict:
+    """Check the status of a free-build request by its request ID (e.g.
+    "MFA-4821", returned when the request was submitted via
+    request_callback). Status is one of: Received, Queued, Building,
+    Delivered."""
+    if not _GITHUB_TOKEN:
+        return {"error": "Status tracking isn't configured on this server."}
+
+    import base64
+    import urllib.error
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(_STATUS_API, headers=_github_headers())
+        with urllib.request.urlopen(req, timeout=10) as r:
+            current = json.loads(r.read().decode())
+        store = json.loads(base64.b64decode(current["content"]).decode())
+    except Exception as e:
+        return {"error": f"Could not check status right now: {e}"}
+
+    for r in store.get("requests", []):
+        if r["id"].lower() == request_id.strip().lower():
+            return {
+                "id": r["id"],
+                "status": r["status"],
+                "submitted": r.get("created_utc"),
+                "last_updated": r.get("updated_utc"),
+            }
+    return {"error": f"No request found with ID '{request_id}'. Double-check the ID you were given."}
 
 
 # Voices: pick by language. Matches Usman's existing edge-tts stack.
@@ -430,6 +553,26 @@ if __name__ == "__main__":
                     await send({"type": "http.response.start", "status": 404,
                                  "headers": [(b"content-type", b"text/plain")]})
                     await send({"type": "http.response.body", "body": b"Not Found"})
+                return
+            if path == "/build-status":
+                query = (scope.get("query_string") or b"").decode()
+                params = dict(p.split("=", 1) for p in query.split("&") if "=" in p)
+                import urllib.parse
+                rid = urllib.parse.unquote(params.get("id", "")).strip()
+                if not rid:
+                    body = json.dumps({"error": "Missing ?id= query parameter."}).encode()
+                    await send({"type": "http.response.start", "status": 400,
+                                 "headers": [(b"content-type", b"application/json"),
+                                             (b"access-control-allow-origin", b"*")]})
+                    await send({"type": "http.response.body", "body": body})
+                    return
+                result = check_build_status.__wrapped__(rid)
+                status_code = 404 if "error" in result else 200
+                body = json.dumps(result).encode()
+                await send({"type": "http.response.start", "status": status_code,
+                             "headers": [(b"content-type", b"application/json"),
+                                         (b"access-control-allow-origin", b"*")]})
+                await send({"type": "http.response.body", "body": body})
                 return
             await send({"type": "http.response.start", "status": 404,
                          "headers": [(b"content-type", b"text/plain")]})
