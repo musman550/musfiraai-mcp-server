@@ -96,7 +96,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Auto-revert this commit — smoke test or live check failed
-        if: steps.smoke.outcome == 'failure' || steps.live_check.outcome == 'failure'
+        if: always() && (steps.smoke.outcome == 'failure' || steps.live_check.outcome == 'failure')
         run: |
           git config user.email "ci-guard-bot@musfiraai.local"
           git config user.name "Musfiraai CI Guard"

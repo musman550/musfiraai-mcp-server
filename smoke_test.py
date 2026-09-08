@@ -77,8 +77,6 @@ def main():
         results.append(check("GET /health returns 200", lambda: (_ for _ in ()).throw(
             AssertionError(f"got {s}")) if (s := http_get("/health")) != 200 else None))
 
-        session_holder = {}
-
         def do_init():
             status, body, session = http_post_json("/mcp", {
                 "jsonrpc": "2.0", "id": 1, "method": "initialize",
@@ -86,16 +84,13 @@ def main():
                            "clientInfo": {"name": "smoke-test", "version": "1.0"}},
             })
             assert status == 200, f"initialize returned {status}"
-            assert session, "no Mcp-Session-Id returned"
-            session_holder["id"] = session
+            # Server runs in stateless_http mode (each request independent) —
+            # no Mcp-Session-Id is expected or required here.
 
         results.append(check("POST /mcp initialize succeeds", do_init))
 
         def do_tools_list():
-            sid = session_holder.get("id")
-            assert sid, "no session from initialize step"
-            http_post_json("/mcp", {"jsonrpc": "2.0", "method": "notifications/initialized"}, sid)
-            status, body, _ = http_post_json("/mcp", {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, sid)
+            status, body, _ = http_post_json("/mcp", {"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
             assert status == 200, f"tools/list returned {status}"
             tools = []
             for line in body.splitlines():

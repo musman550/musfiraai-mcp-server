@@ -503,6 +503,12 @@ if __name__ == "__main__":
         # which doesn't apply here and would otherwise reject every real
         # request since the public hostname isn't localhost.
         mcp.settings.transport_security.enable_dns_rebinding_protection = False
+        # Stateless mode: each request is handled independently, with no
+        # server-side session required to persist between calls. Manufact's
+        # infrastructure doesn't guarantee a client's follow-up requests land
+        # on the same instance that created its session, which made
+        # in-memory sessions unreliable (intermittent 404s on real traffic).
+        mcp.settings.stateless_http = True
 
         mcp.streamable_http_app()  # lazily initializes mcp.session_manager
 
