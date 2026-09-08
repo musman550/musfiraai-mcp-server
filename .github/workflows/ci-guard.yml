@@ -1,0 +1,110 @@
+name: CI Guard (test every push, auto-rollback on failure)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-guard-main
+  cancel-in-progress: false
+
+jobs:
+  test-and-guard:
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, 'Uptime check:') &&
+      !startsWith(github.event.head_commit.author.email, 'uptime-bot')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Local smoke test (server boots, docs load, MCP handshake, tool count)
+        id: smoke
+        run: python3 smoke_test.py
+
+      - name: Wait for Manufact to build & deploy this commit
+        if: success()
+        run: sleep 120
+
+      - name: Verify the LIVE server is healthy on this commit
+        id: live_check
+        if: success()
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys, time, urllib.request, urllib.error
+
+          BASE = "https://dark-spark-uxxux.run.mcp-use.com"
+
+          def healthy():
+              try:
+                  with urllib.request.urlopen(BASE + "/health", timeout=10) as r:
+                      if r.status != 200:
+                          return False
+                  req = urllib.request.Request(
+                      BASE + "/mcp", method="POST",
+                      data=json.dumps({
+                          "jsonrpc": "2.0", "id": 1, "method": "initialize",
+                          "params": {"protocolVersion": "2025-03-26", "capabilities": {},
+                                     "clientInfo": {"name": "ci-guard", "version": "1.0"}},
+                      }).encode(),
+                      headers={"Content-Type": "application/json",
+                               "Accept": "application/json, text/event-stream"},
+                  )
+                  with urllib.request.urlopen(req, timeout=10) as r:
+                      return r.status == 200
+              except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+                  return False
+
+          for attempt in range(6):
+              if healthy():
+                  print("Live server healthy.")
+                  sys.exit(0)
+              time.sleep(20)
+          print("Live server NOT healthy after retries.")
+          sys.exit(1)
+          PYEOF
+
+      - name: Tag and publish a release for this verified, live commit
+        if: success()
+        run: |
+          git fetch --tags
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="v1.0.0"
+          else
+            IFS='.' read -r MA MI PA <<< "${LAST_TAG#v}"
+            NEW_TAG="v${MA}.${MI}.$((PA + 1))"
+          fi
+          git tag "$NEW_TAG"
+          git push origin "$NEW_TAG"
+          gh release create "$NEW_TAG" --generate-notes --title "$NEW_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Auto-revert this commit — smoke test or live check failed
+        if: steps.smoke.outcome == 'failure' || steps.live_check.outcome == 'failure'
+        run: |
+          git config user.email "ci-guard-bot@musfiraai.local"
+          git config user.name "Musfiraai CI Guard"
+          LAST_MSG=$(git log -1 --pretty=%s)
+          if [[ "$LAST_MSG" == Revert* ]]; then
+            echo "::error::The last commit was already a revert and still failed — stopping instead of looping. Needs a human look."
+            exit 1
+          fi
+          git revert --no-edit HEAD
+          git push origin main
+          echo "::warning::A broken push was detected and automatically reverted."

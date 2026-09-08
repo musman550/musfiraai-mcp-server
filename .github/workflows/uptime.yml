@@ -1,0 +1,76 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ping health endpoint and update uptime log/badge
+        run: |
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import urllib.request
+          import urllib.error
+          from datetime import datetime, timezone
+
+          LOG_PATH = "uptime/log.json"
+          BADGE_PATH = "uptime/badge.json"
+          URL = "https://dark-spark-uxxux.run.mcp-use.com/health"
+          MAX_ENTRIES = 2000  # ~20 days of 15-min checks
+
+          os.makedirs("uptime", exist_ok=True)
+
+          try:
+              with open(LOG_PATH, encoding="utf-8") as f:
+                  log = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              log = {"checks": []}
+
+          ok = False
+          try:
+              with urllib.request.urlopen(URL, timeout=10) as r:
+                  ok = r.status == 200
+          except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+              ok = False
+
+          log["checks"].append({"t": datetime.now(timezone.utc).isoformat(), "ok": ok})
+          log["checks"] = log["checks"][-MAX_ENTRIES:]
+
+          total = len(log["checks"])
+          up = sum(1 for c in log["checks"] if c["ok"])
+          pct = (up / total * 100) if total else 100.0
+
+          with open(LOG_PATH, "w", encoding="utf-8") as f:
+              json.dump(log, f, indent=2)
+
+          color = "brightgreen" if pct >= 99 else "yellow" if pct >= 95 else "red"
+          badge = {
+              "schemaVersion": 1,
+              "label": "uptime",
+              "message": f"{pct:.1f}%",
+              "color": color,
+          }
+          with open(BADGE_PATH, "w", encoding="utf-8") as f:
+              json.dump(badge, f, indent=2)
+
+          print(f"Check: ok={ok}, uptime={pct:.2f}% over last {total} checks")
+          PYEOF
+
+      - name: Commit updated uptime data
+        run: |
+          git config user.email "uptime-bot@musfiraai.local"
+          git config user.name "Musfiraai Uptime Monitor"
+          git add uptime/
+          git diff --staged --quiet || git commit -m "Uptime check: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin main

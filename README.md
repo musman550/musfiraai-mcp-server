@@ -46,3 +46,17 @@ musfiraai://portfolio
 
 ## Prompts
 draft_client_reply
+
+## Automated quality & release pipeline (GitHub Actions)
+
+- **CI Guard** (`ci-guard.yml`) — runs on every push to `main`: smoke-tests the
+  code, waits for Manufact to deploy, then verifies the *live* URL is
+  healthy. If either check fails, it automatically reverts the commit and
+  pushes the revert — the live server self-heals within a couple of minutes.
+- **Auto releases** — every push that passes CI is tagged (`v1.0.0`,
+  `v1.0.1`, ...) and published as a GitHub Release with auto-generated notes.
+- **Uptime monitor** (`uptime.yml`) — pings `/health` every 15 minutes and
+  maintains `uptime/badge.json` (a shields.io endpoint badge) and
+  `uptime/log.json` (rolling history).
+- **Secret scanning + push protection** — enabled on this repo (GitHub's free
+  tier for public repos), plus Dependabot vulnerability alerts.
