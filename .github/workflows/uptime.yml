@@ -73,4 +73,9 @@ jobs:
           git config user.name "Musfiraai Uptime Monitor"
           git add uptime/
           git diff --staged --quiet || git commit -m "Uptime check: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push origin main
+          for i in 1 2 3; do
+            git push origin main && break
+            git fetch origin main
+            git rebase origin/main
+            sleep 3
+          done

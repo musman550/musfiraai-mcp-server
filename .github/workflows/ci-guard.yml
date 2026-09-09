@@ -109,5 +109,11 @@ jobs:
             exit 1
           fi
           git revert --no-edit HEAD
-          git push origin main
+          for i in 1 2 3; do
+            git push origin main && break
+            echo "Push rejected (concurrent update), rebasing and retrying ($i/3)..."
+            git fetch origin main
+            git rebase origin/main
+            sleep 3
+          done
           echo "::warning::A broken push was detected and automatically reverted."
