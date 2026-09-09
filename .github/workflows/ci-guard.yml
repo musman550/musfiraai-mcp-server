@@ -50,8 +50,10 @@ jobs:
           BASE = "https://dark-spark-uxxux.run.mcp-use.com"
 
           def healthy():
+              common_headers = {"User-Agent": "Musfiraai-CI-Guard/1.0 (+https://github.com/musman550/musfiraai-mcp-server)"}
               try:
-                  with urllib.request.urlopen(BASE + "/health", timeout=10) as r:
+                  health_req = urllib.request.Request(BASE + "/health", headers=common_headers)
+                  with urllib.request.urlopen(health_req, timeout=10) as r:
                       body = r.read()
                       if r.status != 200:
                           print(f"::warning::/health returned {r.status}: {body[:200]}")
@@ -68,7 +70,8 @@ jobs:
                                      "clientInfo": {"name": "ci-guard", "version": "1.0"}},
                       }).encode(),
                       headers={"Content-Type": "application/json",
-                               "Accept": "application/json, text/event-stream"},
+                               "Accept": "application/json, text/event-stream",
+                               "User-Agent": common_headers["User-Agent"]},
                   )
                   with urllib.request.urlopen(req, timeout=10) as r:
                       body = r.read()
