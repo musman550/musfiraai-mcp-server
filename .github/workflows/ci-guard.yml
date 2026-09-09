@@ -66,13 +66,16 @@ jobs:
                   )
                   with urllib.request.urlopen(req, timeout=10) as r:
                       return r.status == 200
-              except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+              except Exception:
                   return False
 
           for attempt in range(6):
-              if healthy():
-                  print("Live server healthy.")
-                  sys.exit(0)
+              try:
+                  if healthy():
+                      print("Live server healthy.")
+                      sys.exit(0)
+              except Exception as e:
+                  print(f"...check attempt {attempt+1} errored: {e}")
               time.sleep(20)
           print("Live server NOT healthy after retries.")
           sys.exit(1)
