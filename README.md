@@ -60,3 +60,15 @@ draft_client_reply
   `uptime/log.json` (rolling history).
 - **Secret scanning + push protection** — enabled on this repo (GitHub's free
   tier for public repos), plus Dependabot vulnerability alerts.
+
+<!-- BRANDING:START -->
+
+---
+
+🌐 Website: [musfiraai.com](https://musfiraai.com/)
+
+* ▶️ YouTube: [Automate With Musfira AI](https://www.youtube.com/@automatewithmusfiraai)
+* 💼 LinkedIn: [Musfira AI](https://www.linkedin.com/in/musfira-ai-b3218b39b)
+* 📸 Instagram: [@musma_n55](https://instagram.com/musma_n55)
+
+<!-- BRANDING:END -->
