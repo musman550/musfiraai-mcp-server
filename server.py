@@ -1,5 +1,7 @@
+import hashlib
 import json
 import os
+import secrets
 import uuid
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
@@ -7,14 +9,24 @@ from mcp.types import ToolAnnotations
 mcp = FastMCP("musfiraai")
 
 # ---------------------------------------------------------------------------
-# Build-status tracking — stored as JSON in the PRIVATE guardian repo (not
-# this public one), since it holds customer names/contacts. Read/written via
-# the GitHub Contents API. GITHUB_TOKEN must have push access to that repo.
+# ---------------------------------------------------------------------------
+# Build-status tracking. New requests are stored in Supabase table
+# `build_requests` (see migrations/001_build_requests.sql). Legacy MFA-####
+# records remain readable from the PRIVATE guardian repo via the GitHub
+# Contents API (read-only fallback; GITHUB_TOKEN needs read access there).
 # ---------------------------------------------------------------------------
 _GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 _STATUS_REPO = os.environ.get("GITHUB_STATUS_REPO", "musman550/musfiraai-mcp-guardian")
 _STATUS_PATH = os.environ.get("GITHUB_STATUS_PATH", "data/builds.json")
 _STATUS_API = f"https://api.github.com/repos/{_STATUS_REPO}/contents/{_STATUS_PATH}"
+
+_SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+_SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+_BUILD_TABLE = "build_requests"
+_RATE_LIMIT_MAX = 3
+_RATE_LIMIT_WINDOW_MIN = 10
+# 30 symbols: no 0, O, 1, I, L, U (easy to read aloud)
+_ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 # ---------------------------------------------------------------------------
 # Data — loaded from data.json (edit that file directly, e.g. on GitHub, and
@@ -226,6 +238,13 @@ def request_callback(name: str, need: str, contact: str) -> dict:
     import smtplib
     from email.message import EmailMessage
 
+    if _rate_limited(contact):
+        return {
+            "sent": False,
+            "reason": "rate_limited",
+            "message": f"Too many requests from this contact. Try again after {_RATE_LIMIT_WINDOW_MIN} minutes, or contact Musfiraai directly.",
+        }
+
     request_id = _create_build_record(name, need, contact)
 
     sender = os.environ.get("GMAIL_ADDRESS")
@@ -278,80 +297,121 @@ def _github_headers():
     }
 
 
-def _create_build_record(name: str, need: str, contact: str):
-    """Append a new request to the private status store. Returns the new
-    request_id, or None if tracking isn't configured / the write failed
-    (request_callback still works without it — email is the source of truth)."""
-    if not _GITHUB_TOKEN:
-        return None
+def _new_request_id() -> str:
+    """MFA-XXXX-XXXX: 8 crypto-random characters from the unambiguous alphabet."""
+    raw = "".join(secrets.choice(_ID_ALPHABET) for _ in range(8))
+    return f"MFA-{raw[:4]}-{raw[4:]}"
 
-    import base64
-    import datetime
-    import random
-    import urllib.error
+
+def _contact_key(contact: str) -> str:
+    """SHA-256 of the normalized contact. Used for rate limiting so the raw
+    contact is not needed in the lookup query."""
+    normalized = "".join(contact.lower().split())
+    return hashlib.sha256(normalized.encode()).hexdigest()
+
+
+def _supabase_enabled() -> bool:
+    return bool(_SUPABASE_URL and _SUPABASE_KEY)
+
+
+def _supabase_request(method: str, path: str, payload=None, prefer: str = None):
     import urllib.request
 
-    for attempt in range(3):
-        try:
-            req = urllib.request.Request(_STATUS_API, headers=_github_headers())
-            with urllib.request.urlopen(req, timeout=10) as r:
-                current = json.loads(r.read().decode())
-            sha = current["sha"]
-            store = json.loads(base64.b64decode(current["content"]).decode())
-        except urllib.error.URLError:
-            return None
-        except Exception:
-            return None
+    headers = {
+        "apikey": _SUPABASE_KEY,
+        "Authorization": f"Bearer {_SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+    if prefer:
+        headers["Prefer"] = prefer
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(
+        f"{_SUPABASE_URL}/rest/v1/{path}", data=data, method=method, headers=headers,
+    )
+    with urllib.request.urlopen(req, timeout=10) as r:
+        body = r.read().decode()
+        return json.loads(body) if body else None
 
-        request_id = f"MFA-{random.randint(1000, 9999)}"
-        existing_ids = {r["id"] for r in store.get("requests", [])}
-        if request_id in existing_ids:
-            continue  # extremely unlikely collision, just retry with a new random id
 
-        store.setdefault("requests", []).append({
+def _rate_limited(contact: str) -> bool:
+    """True if this contact already has _RATE_LIMIT_MAX requests inside the
+    window. Fails open on storage errors so a database outage never blocks a lead."""
+    if not _supabase_enabled():
+        return False
+    import datetime
+    import urllib.parse
+
+    since = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=_RATE_LIMIT_WINDOW_MIN)
+    query = (
+        f"select=id&contact_key=eq.{_contact_key(contact)}"
+        f"&created_at=gte.{urllib.parse.quote(since.isoformat())}&limit={_RATE_LIMIT_MAX}"
+    )
+    try:
+        rows = _supabase_request("GET", f"{_BUILD_TABLE}?{query}")
+    except Exception:
+        return False
+    return len(rows or []) >= _RATE_LIMIT_MAX
+
+
+def _create_build_record(name: str, need: str, contact: str):
+    """Insert a new request into Supabase and return its ID. Returns None if
+    storage isn't configured or the write failed (email still goes out).
+    The primary key enforces uniqueness: 409 means the ID is taken, so retry."""
+    if not _supabase_enabled():
+        return None
+    import datetime
+    import urllib.error
+
+    key = _contact_key(contact)
+    for _ in range(5):
+        request_id = _new_request_id()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        row = {
             "id": request_id,
             "name": name,
             "contact": contact,
+            "contact_key": key,
             "need": need,
             "status": "Received",
-            "created_utc": datetime.datetime.utcnow().isoformat() + "Z",
-            "updated_utc": datetime.datetime.utcnow().isoformat() + "Z",
-        })
-
-        payload = {
-            "message": f"New build request {request_id}",
-            "content": base64.b64encode(json.dumps(store, indent=2).encode()).decode(),
-            "sha": sha,
+            "created_at": now,
+            "updated_at": now,
         }
         try:
-            put_req = urllib.request.Request(
-                _STATUS_API, method="PUT", headers=_github_headers(),
-                data=json.dumps(payload).encode(),
-            )
-            with urllib.request.urlopen(put_req, timeout=10):
-                return request_id
+            _supabase_request("POST", _BUILD_TABLE, payload=row, prefer="return=minimal")
+            return request_id
         except urllib.error.HTTPError as e:
             if e.code == 409:
-                continue  # someone else wrote in between — retry with fresh sha
+                continue
             return None
         except Exception:
             return None
-
     return None
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
-@tracked
-def check_build_status(request_id: str) -> dict:
-    """Check the status of a free-build request by its request ID (e.g.
-    "MFA-4821", returned when the request was submitted via
-    request_callback). Status is one of: Received, Queued, Building,
-    Delivered."""
-    if not _GITHUB_TOKEN:
-        return {"error": "Status tracking isn't configured on this server."}
+def _supabase_status(request_id: str):
+    import urllib.parse
 
+    rows = _supabase_request(
+        "GET",
+        f"{_BUILD_TABLE}?select=id,status,created_at,updated_at"
+        f"&id=eq.{urllib.parse.quote(request_id)}&limit=1",
+    )
+    if not rows:
+        return None
+    r = rows[0]
+    return {
+        "id": r["id"],
+        "status": r["status"],
+        "submitted": r.get("created_at"),
+        "last_updated": r.get("updated_at"),
+    }
+
+
+def _legacy_status(request_id: str):
+    """Read-only lookup of pre-migration MFA-#### records in the guardian repo."""
+    if not _GITHUB_TOKEN:
+        return None
     import base64
-    import urllib.error
     import urllib.request
 
     try:
@@ -359,18 +419,39 @@ def check_build_status(request_id: str) -> dict:
         with urllib.request.urlopen(req, timeout=10) as r:
             current = json.loads(r.read().decode())
         store = json.loads(base64.b64decode(current["content"]).decode())
-    except Exception as e:
-        return {"error": f"Could not check status right now: {e}"}
-
+    except Exception:
+        return None
     for r in store.get("requests", []):
-        if r["id"].lower() == request_id.strip().lower():
+        if r["id"].lower() == request_id.lower():
             return {
                 "id": r["id"],
                 "status": r["status"],
                 "submitted": r.get("created_utc"),
                 "last_updated": r.get("updated_utc"),
             }
-    return {"error": f"No request found with ID '{request_id}'. Double-check the ID you were given."}
+    return None
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
+@tracked
+def check_build_status(request_id: str) -> dict:
+    """Check the status of a free-build request by its request ID (e.g.
+    "MFA-7KQ2-9TBX", returned when the request was submitted via
+    request_callback). Status is one of: Received, Queued, Building,
+    Delivered."""
+    if not (_supabase_enabled() or _GITHUB_TOKEN):
+        return {"error": "Status tracking isn't configured on this server."}
+
+    rid = request_id.strip().upper()
+    try:
+        row = _supabase_status(rid) if _supabase_enabled() else None
+    except Exception as e:
+        return {"error": f"Could not check status right now: {e}"}
+    if row is None:
+        row = _legacy_status(rid)
+    if row is None:
+        return {"error": f"No request found with ID '{request_id}'. Double-check the ID you were given."}
+    return row
 
 
 # Voices: pick by language. Matches Usman's existing edge-tts stack.
