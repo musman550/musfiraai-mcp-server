@@ -1,5 +1,12 @@
 # Musfiraai MCP Server
 
+Live Model Context Protocol server exposing Musfiraai's company info, services,
+AI stack, FAQ, reviews, and contact details as tools/resources/prompts for any
+MCP-compatible AI client (Claude, GPT, etc).
+
+**Live docs + connect page:** https://dark-spark-uxxux.run.mcp-use.com/
+**MCP endpoint:** https://dark-spark-uxxux.run.mcp-use.com/mcp
+
 <!-- AUTO-SEO:START -->
 > **Summary:** The server provides a MCP JSON‑RPC endpoint for accessing Musfiraai’s company data, services, FAQ, reviews, and contact methods. It includes health checks, build status tracking, and automated CI/CD pipelines.
 
@@ -24,14 +31,6 @@ request_callback returns a request_id like MFA-4821; status is stored in a priva
 
 <sub>Generated automatically from this repository's own content. [How this works](https://musman550.github.io/github-traffic-analytics-dashboard/optimizer/)</sub>
 <!-- AUTO-SEO:END -->
-
-
-Live Model Context Protocol server exposing Musfiraai's company info, services,
-AI stack, FAQ, reviews, and contact details as tools/resources/prompts for any
-MCP-compatible AI client (Claude, GPT, etc).
-
-**Live docs + connect page:** https://dark-spark-uxxux.run.mcp-use.com/
-**MCP endpoint:** https://dark-spark-uxxux.run.mcp-use.com/mcp
 
 ## Run locally
 
