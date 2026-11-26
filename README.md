@@ -7,6 +7,31 @@ MCP-compatible AI client (Claude, GPT, etc).
 **Live docs + connect page:** https://dark-spark-uxxux.run.mcp-use.com/
 **MCP endpoint:** https://dark-spark-uxxux.run.mcp-use.com/mcp
 
+<!-- AUTO-SEO:START -->
+> **Summary:** The server provides a MCP JSON‑RPC endpoint for accessing Musfiraai’s company data, services, FAQ, reviews, and contact methods. It includes health checks, build status tracking, and automated CI/CD pipelines.
+
+**Keywords:** mcp-server · uptime-monitor · health-check · python · build-status
+
+### FAQ
+
+**What is the MCP endpoint?**  
+The MCP endpoint is https://dark-spark-uxxux.run.mcp-use.com/mcp, accepting POST requests for JSON‑RPC calls.
+
+**How do I run the server locally?**  
+Install dependencies with pip install -r requirements.txt and run python server.py for stdio mode, or use MCP_TRANSPORT=streamable-http PORT=8000 python server.py for HTTP mode.
+
+**How is build status tracked?**  
+request_callback returns a request_id like MFA-4821; status is stored in a private repo and can be queried via GET /build-status?id=MFA-XXXX.
+
+### Related projects
+- [musfiraai-mcp](https://github.com/musman550/musfiraai-mcp)
+- [musfiraai-cli](https://github.com/musman550/musfiraai-cli)
+- [musfiraai-tool-assets](https://github.com/musman550/musfiraai-tool-assets): Screenshots served via commit-pinned CDN URLs for musfiraai tools
+- [Website](https://musfiraai.com)
+
+<sub>Generated automatically from this repository's own content. [How this works](https://musman550.github.io/github-traffic-analytics-dashboard/optimizer/)</sub>
+<!-- AUTO-SEO:END -->
+
 ## Run locally
 
 ```
